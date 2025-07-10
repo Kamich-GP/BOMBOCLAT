@@ -49,5 +49,66 @@ def get_pr_buttons():
 
 # Вывод определенного товара
 def get_exact_pr(pr_id):
-    return sql.execute('SELECT * FROM products WHERE pr_id=?;', (pr_id,))
+    return sql.execute('SELECT * FROM products WHERE pr_id=?;', (pr_id,)).fetchone()
+
+
+# Вывод цены товара по названию
+def get_pr_price(pr_name):
+    return sql.execute('SELECT pr_price FROM products WHERE pr_name=?;', (pr_name,)).fetchone()[0]
+
+
+## Методы корзины ##
+# Добавление в корзину
+def add_to_cart(user_id, user_product, user_pr_amount):
+    sql.execute('INSERT INTO cart VALUES(?, ?, ?;);', (user_id, user_product, user_pr_amount))
+    # Фиксация изменений
+    connection.commit()
+
+
+# Очистка корзины
+def clear_cart(user_id):
+    sql.execute('DELETE FROM cart WHERE user_id=?;', (user_id,))
+    # Фиксация изменений
+    connection.commit()
+
+
+# Вывод корзины
+def show_cart(user_id):
+    return sql.execute('SELECT * FROM cart WHERE user_id=?;', (user_id,)).fetchall()
+
+
+# Оформление заказа
+def make_order(user_id):
+    # Получаем товары, который взял пользователь и их кол-во
+    product_names = sql.execute('SELECT user_product FROM cart WHERE user_id=?;', (user_id,)).fetchall()
+    product_counts = sql.execute('SELECT user_pr_amount FROM cart WHERE user_id=?;', (user_id,)).fetchall()
+
+    # Получаем количество товаров на СКЛАДЕ
+    stock = [sql.execute('SELECT pr_count FROM products WHERE pr_name=?;', (i[0],)).fetchone()
+             for i in product_names]
+
+    totals = []
+
+    for t in range(len(product_names)):
+        totals.append(stock[t][0]-product_counts[t][0])
+
+    for c in range(len(totals)):
+        sql.execute('UPDATE products SET pr_count=? WHERE pr_name=?;', (totals[c], product_names[c][0]))
+
+
+    # Фиксация изменений
+    connection.commit()
+    return stock, totals
+
+
+# АДМИНСКАЯ СТОРОНА #
+# Добавление продукта в БД
+def add_pr_to_db(pr_name, pr_des, pr_count, pr_price, pr_photo):
+    if (pr_name,) in sql.execute('SELECT pr_name FROM products;').fetchall():
+        return False
+    else:
+        sql.execute('INSERT INTO products (pr_name, pr_des, pr_count, pr_price, pr_photo) '
+                    'VALUES (?, ?, ?, ?, ?);', (pr_name, pr_des, pr_count, pr_price, pr_photo))
+        # Фиксация изменений
+        connection.commit()
 
