@@ -18,6 +18,8 @@ sql.execute('CREATE TABLE IF NOT EXISTS cart '
             'user_pr_amount INTEGER);')
 
 
+# КЛИЕНТСКАЯ СТОРОНА #
+
 ## Методы пользователя ##
 # Регистрация
 def register(tg_id, name, num):
@@ -33,3 +35,19 @@ def check_user(tg_id):
         return True
     else:
         return False
+
+## Методы для продуктов ##
+# Получить все товары
+def get_all_pr():
+    return sql.execute('SELECT * FROM products;').fetchall()
+
+
+# Вывод товаров для кнопок
+def get_pr_buttons():
+    return [i[:2] for i in get_all_pr() if i[3] > 0]
+
+
+# Вывод определенного товара
+def get_exact_pr(pr_id):
+    return sql.execute('SELECT * FROM products WHERE pr_id=?;', (pr_id,))
+
