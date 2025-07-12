@@ -59,7 +59,25 @@ def choose_count(call):
     if call.data == 'increment':
         bot.edit_message_reply_markup(chat_id=user_id, message_id=call.message.message_id,
                                       reply_markup=buttons.choose_count_buttons(
-                                          database.get_exact_pr(users[user_id]['pr_name'])))
+                                          database.get_exact_pr(users[user_id]['pr_name'])[3], 'increment',
+                                      users[user_id]['pr_count']))
+        users[user_id]['pr_count'] += 1
+    elif call.data == 'decrement':
+        bot.edit_message_reply_markup(chat_id=user_id, message_id=call.message.message_id,
+                                      reply_markup=buttons.choose_count_buttons(
+                                          database.get_exact_pr(users[user_id]['pr_name'])[3], 'decrement',
+                                          users[user_id]['pr_count']))
+        users[user_id]['pr_count'] -= 1
+    elif call.data == 'to_cart':
+        pr_name = database.get_exact_pr(users[user_id]['pr_name'])[1]
+        database.add_to_cart(user_id, pr_name, users[user_id]['pr_count'])
+        bot.delete_message(chat_id=user_id, message_id=call.message.message_id)
+        bot.send_message(user_id, 'Товар успешно помещен в корзину!',
+                         reply_markup=buttons.main_menu(database.get_pr_buttons()))
+    elif call.data == 'back':
+        bot.delete_message(chat_id=user_id, message_id=call.message.message_id)
+        bot.send_message(user_id, 'Выберите пункт меню:',
+                         reply_markup=buttons.main_menu(database.get_pr_buttons()))
 
 
 # Обработчик команды /admin
@@ -92,7 +110,7 @@ def choose_product(call):
                                                        f'Цена: {pr_info[4]}\n'
                                                        f'Количество на складе: {pr_info[3]}',
                    reply_markup=buttons.choose_count_buttons(pr_info[3]))
-    users[user_id] = {'pr_name': int(call.data), 'pr_amount': 1}
+    users[user_id] = {'pr_name': int(call.data), 'pr_count': 1}
 
 
 # Запуск бота

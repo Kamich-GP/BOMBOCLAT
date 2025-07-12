@@ -60,7 +60,7 @@ def get_pr_price(pr_name):
 ## Методы корзины ##
 # Добавление в корзину
 def add_to_cart(user_id, user_product, user_pr_amount):
-    sql.execute('INSERT INTO cart VALUES(?, ?, ?;);', (user_id, user_product, user_pr_amount))
+    sql.execute('INSERT INTO cart VALUES (?, ?, ?);', (user_id, user_product, user_pr_amount))
     # Фиксация изменений
     connection.commit()
 
