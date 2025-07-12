@@ -5,7 +5,8 @@ import database
 
 # Создаем объект бота
 bot = telebot.TeleBot('TOKEN')
-
+# Создаем временные данные
+users = {}
 
 # Обработчик команды /start
 @bot.message_handler(commands=['start'])
@@ -50,6 +51,17 @@ def get_num(message, user_name):
         bot.register_next_step_handler(message, get_num, user_name)
 
 
+# Выбор кол-ва товара
+@bot.callback_query_handler(lambda call: call.data in ['increment', 'decrement', 'to_cart', 'back'])
+def choose_count(call):
+    user_id = call.message.chat.id
+
+    if call.data == 'increment':
+        bot.edit_message_reply_markup(chat_id=user_id, message_id=call.message.message_id,
+                                      reply_markup=buttons.choose_count_buttons(
+                                          database.get_exact_pr(users[user_id]['pr_name'])))
+
+
 # Обработчик команды /admin
 @bot.message_handler(commands=['admin'])
 def admin(message):
@@ -68,6 +80,19 @@ def get_pr(message):
     pr_info = message.text.split(',')
     database.add_pr_to_db(pr_info[0].strip(), pr_info[1].strip(), int(pr_info[2]), float(pr_info[3]), pr_info[4].strip())
     bot.send_message(user_id, 'Продукт успешно добавлен!')
+
+
+@bot.callback_query_handler(lambda call: int(call.data) in [i[0] for i in database.get_all_pr()])
+def choose_product(call):
+    user_id = call.message.chat.id
+    pr_info = database.get_exact_pr(int(call.data))
+    bot.delete_message(chat_id=user_id, message_id=call.message.message_id)
+    bot.send_photo(user_id, photo=pr_info[-1], caption=f'{pr_info[1]}\n\n'
+                                                       f'Описание: {pr_info[2]}\n'
+                                                       f'Цена: {pr_info[4]}\n'
+                                                       f'Количество на складе: {pr_info[3]}',
+                   reply_markup=buttons.choose_count_buttons(pr_info[3]))
+    users[user_id] = {'pr_name': int(call.data), 'pr_amount': 1}
 
 
 # Запуск бота
