@@ -51,3 +51,27 @@ def choose_count_buttons(pr_amount, plus_or_minus='', amount=1):
     # Добавляем кнопки в пространство
     kb.add(minus, count, plus, back, to_cart)
     return kb
+
+# Кнопки корзины
+def cart_buttons():
+    # Создаем пространство
+    kb = types.InlineKeyboardMarkup(row_width=2)
+    # Создаем сами кнопки
+    but1 = types.InlineKeyboardButton(text='Назад🔙', callback_data='back')
+    but2 = types.InlineKeyboardButton(text='Оформить заказ🧾', callback_data='order')
+    but3 = types.InlineKeyboardButton(text='Очистить корзину🗑️', callback_data='clear')
+    # Добавляем кнопки в пространство
+    kb.add(but1, but3)
+    kb.row(but2)
+    return kb
+
+
+# Кнопка отправки локации
+def loc_button():
+    # Создаем пространство
+    kb = types.ReplyKeyboardMarkup(resize_keyboard=True)
+    # Создаем кнопку
+    but1 = types.KeyboardButton('Отправить геопозицию📍', request_location=True)
+    # Добавляем кнопки в пространство
+    kb.add(but1)
+    return kb

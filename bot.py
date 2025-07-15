@@ -80,6 +80,62 @@ def choose_count(call):
                          reply_markup=buttons.main_menu(database.get_pr_buttons()))
 
 
+# Работа с корзиной
+@bot.callback_query_handler(lambda call: call.data in ['cart', 'order', 'clear'])
+def cart_handle(call):
+    user_id = call.message.chat.id
+
+    if call.data == 'cart':
+        text = 'Ваша корзина:\n\n'
+        total = 0.0
+
+        for i in database.show_cart(user_id):
+            text += (f'Продукт: {i[1]}\n'
+                     f'Количество: {i[2]}\n'
+                     f'---------------------\n')
+            total += database.get_pr_price(i[1]) * i[2]
+        text += f'Итого: {total} сум'
+        bot.delete_message(chat_id=user_id, message_id=call.message.message_id)
+        bot.send_message(user_id, text, reply_markup=buttons.cart_buttons())
+    elif call.data == 'clear':
+        database.clear_cart(user_id)
+        bot.delete_message(chat_id=user_id, message_id=call.message.message_id)
+        bot.send_message(user_id, 'Корзина очищена!',
+                         reply_markup=buttons.main_menu(database.get_pr_buttons()))
+    elif call.data == 'order':
+        text = (f'Новый заказ!\n'
+                f'Клиент @{call.message.chat.username}\n')
+        total = 0.0
+
+        for i in database.show_cart(user_id):
+            text += (f'Продукт: {i[1]}\n'
+                     f'Количество: {i[2]}\n'
+                     f'---------------------\n')
+            total += database.get_pr_price(i[1]) * i[2]
+        text += f'Итого: {total} сум'
+        bot.delete_message(chat_id=user_id, message_id=call.message.message_id)
+        bot.send_message(user_id, 'Чтобы оформить заказ, отправьте свою локацию по кнопке!',
+                         reply_markup=buttons.loc_button())
+        # Переход на этап получения локации
+        bot.register_next_step_handler(call.message, get_loc, text)
+
+
+# Этап получения локации
+def get_loc(message, text):
+    user_id = message.from_user.id
+
+    if message.location:
+        bot.send_message('GROUP_ID', text)
+        bot.send_location('GROUP_ID', longitude=message.location.longitude,
+                          latitude=message.location.latitude)
+        bot.send_message(user_id, 'Ваш заказ успешно оформлен! Скоро с вами свяжутся!')
+        start(message)
+    else:
+        bot.send_message(user_id, 'Отправьте локацию по кнопке!')
+        # Возвращаем на этап получения локации
+        bot.register_next_step_handler(message, get_loc, text)
+
+
 # Обработчик команды /admin
 @bot.message_handler(commands=['admin'])
 def admin(message):
